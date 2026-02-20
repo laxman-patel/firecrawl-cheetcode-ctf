@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Firecrawl CTF Orchestrator",
+  "version": "0.1.0",
+  "description": "Automates Firecrawl CTF solve + submit flow with OpenRouter.",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://cheetcode-ctf.firecrawl.dev/*",
+    "https://openrouter.ai/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cheetcode-ctf.firecrawl.dev/*"
+      ],
+      "js": [
+        "src/content/runner.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "options_page": "src/options/options.html",
+  "action": {
+    "default_title": "Firecrawl CTF Orchestrator",
+    "default_popup": "src/popup/popup.html"
+  }
+}

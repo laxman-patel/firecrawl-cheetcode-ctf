@@ -1,0 +1,37 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependency directories
+node_modules/
+
+# Build and tooling output
+dist/
+build/
+out/
+coverage/
+.cache/
+*.tsbuildinfo
+
+# Chrome extension packaging artifacts
+*.crx
+*.pem
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
