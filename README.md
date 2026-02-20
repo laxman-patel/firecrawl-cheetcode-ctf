@@ -10,7 +10,9 @@ Load that folder in Chrome using **Load unpacked**.
 
 ## Demo recording
 
-- Execution video: [`execution-screen-capture.mp4`](./execution-screen-capture.mp4)
+<video src="./execution-screen-capture.mp4" controls muted playsinline width="960"></video>
+
+- If inline playback is not shown by your GitHub client, open: [`execution-screen-capture.mp4`](./execution-screen-capture.mp4)
 
 ## What this is optimized for
 
