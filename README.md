@@ -8,6 +8,10 @@ The extension directory is:
 
 Load that folder in Chrome using **Load unpacked**.
 
+## Demo recording
+
+- Execution video: [`execution-screen-capture.mp4`](./execution-screen-capture.mp4)
+
 ## What this is optimized for
 
 - Manual trigger from extension popup (`Run Now`)
