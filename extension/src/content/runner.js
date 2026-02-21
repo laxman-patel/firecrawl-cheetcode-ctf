@@ -7,8 +7,8 @@
   const TARGET_PROBLEM_COUNT = 10;
   const OBSERVER_TIMEOUT_MS = 20000;
   const SOLVE_REQUEST_TIMEOUT_MS = 25000;
-  const MAX_SUBMIT_WAIT_MS = 3500;
-  const FINISH_SAFETY_THRESHOLD_MS = 800;
+  const MAX_SUBMIT_WAIT_MS = 500;
+  const FINISH_SAFETY_THRESHOLD_MS = 100;
   const RUN_ARM_KEY = "ctfArmedRun";
   const RUN_ARM_TTL_MS = 60000;
   const LOG_PREFIX = "[ctf-orchestrator]";
@@ -507,23 +507,7 @@
       clickButton(problem.submitButton);
     }
 
-    let solved = await waitForSolvedCount(TARGET_PROBLEM_COUNT, MAX_SUBMIT_WAIT_MS);
-
-    if (solved < TARGET_PROBLEM_COUNT) {
-      const remainingMs = readRemainingTimeMs();
-      if (remainingMs === null || remainingMs > FINISH_SAFETY_THRESHOLD_MS) {
-        debug("Not all problems marked solved after first submit wave. Retrying submits once.", {
-          solved,
-          remainingMs,
-        });
-
-        for (const problem of problems) {
-          clickButton(problem.submitButton);
-        }
-
-        solved = await waitForSolvedCount(TARGET_PROBLEM_COUNT, 1200);
-      }
-    }
+    const solved = await waitForSolvedCount(TARGET_PROBLEM_COUNT, MAX_SUBMIT_WAIT_MS);
 
     clickButton(finishButton);
     debug("Clicked FINISH & SUBMIT.", {
@@ -550,7 +534,7 @@
           window.clearInterval(interval);
           resolve(solved);
         }
-      }, 20);
+      }, 5);
     });
   }
 
