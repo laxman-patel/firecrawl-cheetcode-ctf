@@ -123,23 +123,40 @@ async function solveProblems(payload, sender) {
   );
 
   const solutions = [];
-  const failures = [];
+  const retryIndices = [];
   results.forEach((result, idx) => {
     if (result.status === "fulfilled") {
       solutions.push(result.value);
     } else {
-      const errMsg = result.reason instanceof Error ? result.reason.message : String(result.reason);
-      failures.push({ index: problems[idx].index, error: errMsg });
+      retryIndices.push(idx);
       solutions.push(null);
     }
   });
 
-  if (failures.length > 0) {
-    debugLog("background", "Some parallel calls failed.", { failures });
-    throw new Error(
-      failures.length + " problem(s) failed: " +
-      failures.map((f) => "#" + f.index + ": " + f.error).join("; ")
+  if (retryIndices.length > 0) {
+    debugLog("background", "Retrying failed calls.", { indices: retryIndices.map((i) => problems[i].index) });
+    const retryResults = await Promise.allSettled(
+      retryIndices.map((idx) => solveSingleProblem(problems[idx], headers))
     );
+
+    const failures = [];
+    retryResults.forEach((result, i) => {
+      const idx = retryIndices[i];
+      if (result.status === "fulfilled") {
+        solutions[idx] = result.value;
+      } else {
+        const errMsg = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        failures.push({ index: problems[idx].index, error: errMsg });
+      }
+    });
+
+    if (failures.length > 0) {
+      debugLog("background", "Retry failed.", { failures });
+      throw new Error(
+        failures.length + " problem(s) failed after retry: " +
+        failures.map((f) => "#" + f.index + ": " + f.error).join("; ")
+      );
+    }
   }
 
   debugLog("background", "All parallel calls succeeded.", { count: solutions.length });
@@ -170,7 +187,7 @@ async function solveSingleProblem(problem, headers) {
     stream: false,
     temperature: 0,
     top_p: 1,
-    max_tokens: 256,
+    max_tokens: 1024,
     provider: {
       order: PROVIDER_ORDER,
       allow_fallbacks: false,
@@ -180,7 +197,7 @@ async function solveSingleProblem(problem, headers) {
     messages: [
       {
         role: "system",
-        content: "Solve this JavaScript task. Return ONLY the function code. No markdown. No explanation.",
+        content: "Solve this JavaScript task. Return ONLY the function code. All parameters are already their correct runtime types. Never use eval(). No markdown. No explanation.",
       },
       {
         role: "user",
@@ -190,6 +207,13 @@ async function solveSingleProblem(problem, headers) {
   };
 
   const response = await postJsonWithTimeout(OPENROUTER_API_URL, headers, body, REQUEST_TIMEOUT_MS);
+  const choice0 = response && response.choices && response.choices[0];
+  // #region agent log
+  fetch("http://127.0.0.1:7244/ingest/EOb32rzrDr6NFSSHA6OsQzR6", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hypothesis: "H1-H4", problemIndex: problem.index, choicesLength: response && response.choices && response.choices.length, finishReason: choice0 && choice0.finish_reason, hasMessage: Boolean(choice0 && choice0.message), contentType: choice0 && choice0.message && typeof choice0.message.content, contentValue: choice0 && choice0.message && choice0.message.content, contentLength: choice0 && choice0.message && typeof choice0.message.content === "string" ? choice0.message.content.length : -1, timestamp: Date.now() }) }).catch(() => {});
+  // #endregion
+  if (choice0 && choice0.finish_reason === "length") {
+    throw new Error("Truncated response (finish_reason=length) for problem #" + problem.index);
+  }
   return extractSolutionText(response);
 }
 
@@ -200,6 +224,9 @@ function extractSolutionText(apiResponse) {
   }
   const text = extractMessageText(message.content);
   const clean = stripCodeFences(text);
+  // #region agent log
+  fetch("http://127.0.0.1:7244/ingest/EOb32rzrDr6NFSSHA6OsQzR6", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hypothesis: "H5", extractedText: text.slice(0, 300), afterStripFences: clean.slice(0, 300), textLength: text.length, cleanLength: clean.length, timestamp: Date.now() }) }).catch(() => {});
+  // #endregion
   if (!clean) {
     throw new Error("Empty solution from model.");
   }

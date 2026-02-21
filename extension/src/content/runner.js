@@ -463,7 +463,7 @@
       return solution;
     }
 
-    const declarationRegex = /function\s+[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]*\)/;
+    const declarationRegex = /function\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]*\)/;
     if (declarationRegex.test(solution)) {
       return solution.replace(declarationRegex, targetDeclaration);
     }
